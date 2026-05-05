@@ -38,6 +38,45 @@ git checkout main
 
 ---
 
+## Step:4 Lanching AWS EC2 and Jenkins Installation
+
+```bash
+Installed all the dependecies on ec2
+sudo dnf update -y
+sudo dnf install java-17-amazon-corretto -y
+
+sudo wget -O /etc/yum.repos.d/jenkins.repo \
+https://pkg.jenkins.io/redhat-stable/jenkins.repo
+
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+
+sudo dnf install jenkins -y
+
+sudo systemctl enable jenkins
+```
+## Step-5 Accessing Jenkins and Building the test case.
+
+<img width="1451" height="930" alt="image" src="https://github.com/user-attachments/assets/966f0c18-7dce-4c81-9948-7ed3f6b39951" />
+
+---
+<img width="1869" height="1031" alt="image" src="https://github.com/user-attachments/assets/b77fb65c-9d57-40e7-9123-a817f7e9c3f6" />
+
+---
+<img width="1006" height="773" alt="image" src="https://github.com/user-attachments/assets/9e9fa2f6-1bc5-482d-aa7b-732cd5f5da7a" />
+
+# Accessing the Flask app through EC2 Instance 
+<img width="1912" height="1030" alt="image" src="https://github.com/user-attachments/assets/0173943b-9e9e-4489-8e9d-f5b200bed14e" />
+
+---
+<img width="1910" height="1076" alt="image" src="https://github.com/user-attachments/assets/d6f5af8a-7831-4b2e-8e16-1dc8f546ce23" />
+
+
+
+
+
+
+
+
 
 
 
