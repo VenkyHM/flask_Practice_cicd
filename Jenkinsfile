@@ -1,6 +1,11 @@
 pipeline {
     agent {label 'Jenkins'}
 
+    environment {
+        MONGO_URI = "mongodb://localhost:27017/test_student_db"
+        SECRET_KEY = "testsecret"
+    }
+
     stages {
 
         stage('Build') {
