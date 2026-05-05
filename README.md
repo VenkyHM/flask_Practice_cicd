@@ -20,6 +20,12 @@ cd flask_Practice_cicd
 
 ---
 
+## Checking pytest on local
+<img width="1485" height="730" alt="image" src="https://github.com/user-attachments/assets/bfbbf294-0b0e-4b30-84dd-9db6605041f9" />
+
+---
+
+
 
 
 
