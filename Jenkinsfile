@@ -1,5 +1,5 @@
 pipeline {
-    agent {label 'Jenkins'}
+    agent { label 'Jenkins' }
 
     environment {
         MONGO_URI = "mongodb://localhost:27017/test_student_db"
@@ -7,6 +7,13 @@ pipeline {
     }
 
     stages {
+
+        stage('Checkout') {
+            steps {
+                // Pull latest code from GitHub
+                checkout scm
+            }
+        }
 
         stage('Build') {
             steps {
@@ -27,7 +34,10 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
+                # Stop any existing app.py process
                 pkill -f app.py || true
+
+                # Relaunch Flask app in background
                 nohup ./venv/bin/python app.py > output.log 2>&1 &
                 sleep 5
                 '''
@@ -37,10 +47,10 @@ pipeline {
 
     post {
         success {
-            echo 'Build Successful!'
+            echo '✅ Build Successful!'
         }
         failure {
-            echo 'Build Failed!'
+            echo '❌ Build Failed!'
         }
     }
 }
