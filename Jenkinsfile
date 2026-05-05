@@ -5,7 +5,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git 'https://github.com/VenkyHM/CICD-Pipeline-FlaskApp.git'
+                git 'https://github.com/VenkyHM/flask_Practice_cicd.git'
             }
         }
 
