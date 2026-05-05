@@ -1,4 +1,4 @@
-# Step:1 Repo Fork to Github
+## Step:1 Repo Fork to Github
 ---
 
  ```bash 
@@ -24,6 +24,20 @@ cd flask_Practice_cicd
 <img width="1485" height="730" alt="image" src="https://github.com/user-attachments/assets/bfbbf294-0b0e-4b30-84dd-9db6605041f9" />
 
 ---
+
+## Step:3 Github branching setup.
+```bash
+git checkout -b staging
+git push origin staging
+git checkout main
+```
+<img width="1464" height="469" alt="image" src="https://github.com/user-attachments/assets/7a66f55c-5616-4835-ba22-584662607443" />
+
+---
+<img width="1904" height="954" alt="image" src="https://github.com/user-attachments/assets/181930a9-f058-441f-9b87-e41250fe9ae6" />
+
+---
+
 
 
 
