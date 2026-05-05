@@ -1,6 +1,6 @@
 pipeline {
-    agent {label 'Jenkins'}
-    
+    agent any
+
     stages {
 
         stage('Build') {
@@ -9,14 +9,7 @@ pipeline {
                 python3 -m venv venv
                 ./venv/bin/pip install --upgrade pip
                 ./venv/bin/pip install -r requirements.txt
-                ./venv/bin/pip install pytest
                 '''
-            }
-        }
-
-        stage('Start MongoDB') {
-            steps {
-                sh 'sudo systemctl start mongod'
             }
         }
 
