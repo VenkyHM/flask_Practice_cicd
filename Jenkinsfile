@@ -54,3 +54,17 @@ pipeline {
         }
     }
 }
+post {
+
+    success {
+        mail to: 'venkat.hm786@gmail.com',
+        subject: "SUCCESS: Jenkins Build ${BUILD_NUMBER}",
+        body: "Build Successful"
+    }
+
+    failure {
+        mail to: 'venkat.hm786@gmail.com',
+        subject: "FAILED: Jenkins Build ${BUILD_NUMBER}",
+        body: "Build Failed"
+    }
+}
