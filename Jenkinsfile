@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent {label 'Jenkins'}
 
     environment {
         MONGO_URI = "mongodb://localhost:27017/test_student_db"
