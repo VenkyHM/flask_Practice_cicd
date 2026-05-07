@@ -70,6 +70,19 @@ sudo systemctl enable jenkins
 ---
 <img width="1910" height="1076" alt="image" src="https://github.com/user-attachments/assets/d6f5af8a-7831-4b2e-8e16-1dc8f546ce23" />
 
+## Step-6 Configuring the email notifiaction whenever the pipeline is triggering new build when new changes are made.
+
+---
+<img width="1906" height="1034" alt="image" src="https://github.com/user-attachments/assets/7a9e024b-cc4e-4d6c-a88e-d10334d1bc84" />
+
+---
+<img width="1570" height="891" alt="image" src="https://github.com/user-attachments/assets/5561b653-ea6a-4ef8-a9d5-f4063fb9571f" />
+
+# TASK 2: GitHub Actions CI/CD
+
+
+
+
 
 
 
