@@ -1,5 +1,5 @@
 pipeline {
-    agent {label 'Jenkins'}
+    agent { label 'Jenkins' }
 
     environment {
         MONGO_URI = "mongodb://localhost:27017/test_student_db"
@@ -7,7 +7,6 @@ pipeline {
     }
 
     stages {
-
         stage('Clone') {
             steps {
                 git branch: 'staging', url: 'https://github.com/VenkyHM/flask_Practice_cicd.git'
@@ -32,11 +31,7 @@ pipeline {
                 sh '''
                 set -e
                 . venv/bin/activate
-
-                echo "🔍 Running pylint..."
                 pylint app.py || true
-
-                echo "🔐 Running bandit (excluding venv)..."
                 bandit -r . --exclude venv -s B104,B101
                 '''
             }
@@ -58,7 +53,6 @@ pipeline {
                     sh """
                     ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "
                         set -e
-
                         echo '🚀 Jenkins Staging Deploy'
 
                         if [ -d '$APP_DIR/.git' ]; then
@@ -70,20 +64,16 @@ pipeline {
                           cd $APP_DIR
                         fi
 
-                        echo '📦 Setting environment variables'
                         echo 'MONGO_URI=${MONGO_URI}' > .env
 
-                        echo '🐍 Setting up virtual environment'
                         if [ ! -d 'venv' ]; then
                             python3 -m venv venv
                         fi
                         source venv/bin/activate
-
                         pip install --upgrade pip
                         pip install -r requirements.txt
                         pip install gunicorn
 
-                        echo '🔄 Restarting services'
                         sudo systemctl daemon-reload
                         sudo systemctl restart flask-app
                         sudo systemctl restart nginx
@@ -99,11 +89,9 @@ pipeline {
     post {
         success {
             echo '✅ Pipeline succeeded'
-
             emailext (
                 subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: """
-Build SUCCESS!
+                body: """Build SUCCESS!
 
 Job: ${env.JOB_NAME}
 Build Number: ${env.BUILD_NUMBER}
@@ -111,24 +99,24 @@ Branch: ${env.BRANCH_NAME}
 
 Check details: ${env.BUILD_URL}
 """,
-                to: "venkat.hm786@gmail.com"
+                to: "venkat.hm786@gmail.com",
+                from: "venkat.hm786@gmail.com"
             )
         }
 
         failure {
             echo '❌ Pipeline failed'
-
             emailext (
                 subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: """
-Build FAILED!
+                body: """Build FAILED!
 
 Job: ${env.JOB_NAME}
 Build Number: ${env.BUILD_NUMBER}
 
 Check logs: ${env.BUILD_URL}
 """,
-                to: "venkat.hm786@gmail.com"
+                to: "venkat.hm786@gmail.com",
+                from: "venkat.hm786@gmail.com"
             )
         }
     }
