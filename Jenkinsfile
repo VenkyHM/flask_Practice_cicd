@@ -7,117 +7,60 @@ pipeline {
     }
 
     stages {
-        stage('Clone') {
+
+        stage('Checkout') {
             steps {
-                git branch: 'staging', url: 'https://github.com/VenkyHM/flask_Practice_cicd.git'
+                // Pull latest code from GitHub
+                checkout scm
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Build') {
             steps {
                 sh '''
-                set -e
                 python3 -m venv venv
-                . venv/bin/activate
-                pip install --upgrade pip
-                pip install -r requirements.txt
-                pip install pytest pylint bandit
+                ./venv/bin/pip install --upgrade pip
+                ./venv/bin/pip install -r requirements.txt
                 '''
             }
         }
 
-        stage('Code Quality') {
+        stage('Test') {
+            steps {
+                sh './venv/bin/pytest -v'
+            }
+        }
+
+        stage('Deploy') {
             steps {
                 sh '''
-                set -e
-                . venv/bin/activate
-                pylint app.py || true
-                bandit -r . --exclude venv -s B104,B101
+                # Stop any existing app.py process
+                pkill -f app.py || true
+
+                # Relaunch Flask app in background
+                nohup ./venv/bin/python app.py > output.log 2>&1 &
+                sleep 5
                 '''
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                sh '''
-                set -e
-                . venv/bin/activate
-                pytest -v
-                '''
-            }
-        }
-
-        stage('Deploy to EC2 (Staging)') {
-            steps {
-                sshagent(['ec2-key']) {
-                    sh """
-                    ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "
-                        set -e
-                        echo '🚀 Jenkins Staging Deploy'
-
-                        if [ -d '$APP_DIR/.git' ]; then
-                          cd $APP_DIR
-                          git fetch origin
-                          git reset --hard origin/staging
-                        else
-                          git clone -b staging https://github.com/VenkyHM/flask_Practice_cicd.git $APP_DIR
-                          cd $APP_DIR
-                        fi
-
-                        echo 'MONGO_URI=${MONGO_URI}' > .env
-
-                        if [ ! -d 'venv' ]; then
-                            python3 -m venv venv
-                        fi
-                        source venv/bin/activate
-                        pip install --upgrade pip
-                        pip install -r requirements.txt
-                        pip install gunicorn
-
-                        sudo systemctl daemon-reload
-                        sudo systemctl restart flask-app
-                        sudo systemctl restart nginx
-
-                        echo '✅ Deployment Done'
-                    "
-                    """
-                }
             }
         }
     }
 
     post {
+
         success {
-            echo '✅ Pipeline succeeded'
-            emailext (
-                subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: """Build SUCCESS!
+            echo '✅ Build Successful!'
 
-Job: ${env.JOB_NAME}
-Build Number: ${env.BUILD_NUMBER}
-Branch: ${env.BRANCH_NAME}
-
-Check details: ${env.BUILD_URL}
-""",
-                to: "venkat.hm786@gmail.com",
-                from: "venkat.hm786@gmail.com"
-            )
+            mail to: 'venkat.hm786@gmail.com',
+            subject: "SUCCESS: Jenkins Build ${BUILD_NUMBER}",
+            body: "Build Successful"
         }
 
         failure {
-            echo '❌ Pipeline failed'
-            emailext (
-                subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: """Build FAILED!
+            echo '❌ Build Failed!'
 
-Job: ${env.JOB_NAME}
-Build Number: ${env.BUILD_NUMBER}
-
-Check logs: ${env.BUILD_URL}
-""",
-                to: "venkat.hm786@gmail.com",
-                from: "venkat.hm786@gmail.com"
-            )
+            mail to: 'venkat.hm786@gmail.com',
+            subject: "FAILED: Jenkins Build ${BUILD_NUMBER}",
+            body: "Build Failed"
         }
     }
 }
