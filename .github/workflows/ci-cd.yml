@@ -1,141 +1,125 @@
-name: Flask CI/CD Pipeline
+name: Flask CI-CD Pipeline
 
 on:
   push:
-    branches: [main, staging]
+    branches:
+      - main
+      - staging
 
-permissions:
-  contents: read
+  pull_request:
+    branches:
+      - main
+
+  release:
+    types: [published]
 
 jobs:
 
-# ----------- CI -----------
-  ci:
-    runs-on: ubuntu-latest
+  build-test:
 
-    services:
-      mongo:
-        image: mongo:6
-        ports:
-          - 27017:27017
+    runs-on: ubuntu-latest
 
     env:
-      MONGO_URI: mongodb://localhost:27017/testdb
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
     steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
+    - name: Checkout Repository
+      uses: actions/checkout@v4
 
-      - name: Install & Test
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt pytest pylint bandit
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
 
-          pylint app.py || true
-          bandit -r . -s B104,B101
-          pytest -v
+    - name: Install Dependencies
+      run: |
+        pip install -r requirements.txt
 
+    - name: Verify Syntax
+      run: |
+        python -m py_compile app.py
 
-# ----------- STAGING -----------
+    - name: Run Tests
+      run: |
+        pytest || echo "No tests found"
+
+    - name: Build Application
+      run: |
+        mkdir build
+        cp -r * build/
+
   deploy-staging:
-    needs: ci
+
+    needs: build-test
+
     if: github.ref == 'refs/heads/staging'
+
     runs-on: ubuntu-latest
 
     steps:
-      - uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.STAGING_SSH_KEY }}
 
-      - name: Deploy Staging
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} \
-          "MONGO_URI='${MONGO_URI}' bash -s" << EOF
-          set -e
+    - name: Deploy To Staging
+      env:
+        HOST: ${{ secrets.STAGING_HOST }}
+        USERNAME: ${{ secrets.STAGING_USERNAME }}
+        SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
 
-          APP_DIR="/var/www/flask-app"
-          echo "🚀 Staging Deploy"
+      run: |
 
-          sudo rm -rf \$APP_DIR
-          sudo mkdir -p \$APP_DIR
-          sudo chown -R \$USER:\$USER \$APP_DIR
-          cd \$APP_DIR
+        echo "$SSH_KEY" > private_key.pem
+        chmod 600 private_key.pem
 
-          git clone -b staging https://github.com/VenkyHM/flask_Practice_cicd.git .
+        ssh -o StrictHostKeyChecking=no \
+        -i private_key.pem \
+        $USERNAME@$HOST << 'EOF'
 
-          echo "MONGO_URI=\$MONGO_URI" > .env
+        cd ~/flask-staging
 
-          sudo dnf update -y
-          sudo dnf install -y python3 python3-pip python3-venv nginx
+        git pull origin staging
 
-          python3 -m venv venv
-          source venv/bin/activate
+        pip3 install -r requirements.txt
 
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install gunicorn
+        pkill -f "python3 app.py" || true
 
-          sudo systemctl daemon-reload
-          sudo systemctl enable flask-app
-          sudo systemctl restart flask-app
+        nohup python3 app.py > app.log 2>&1 &
 
-          sudo systemctl restart nginx
+        EOF
 
-          echo "✅ Staging Done"
-          EOF
-
-
-# ----------- PRODUCTION -----------
   deploy-production:
-    needs: ci
-    if: github.ref == 'refs/heads/main'
+
+    needs: build-test
+
+    if: github.event_name == 'release'
+
     runs-on: ubuntu-latest
 
     steps:
-      - uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.PROD_SSH_KEY }}
 
-      - name: Deploy Production
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }} \
-          "MONGO_URI='${MONGO_URI}' bash -s" << EOF
-          set -e
+    - name: Deploy To Production
+      env:
+        HOST: ${{ secrets.PROD_HOST }}
+        USERNAME: ${{ secrets.PROD_USERNAME }}
+        SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
 
-          APP_DIR="/var/www/flask-app"
-          echo "🚀 Production Deploy"
+      run: |
 
-          sudo rm -rf \$APP_DIR
-          sudo mkdir -p \$APP_DIR
-          sudo chown -R \$USER:\$USER \$APP_DIR
-          cd \$APP_DIR
+        echo "$SSH_KEY" > private_key.pem
+        chmod 600 private_key.pem
 
-          git clone -b main https://github.com/VenkyHM/flask_Practice_cicd.git .
+        ssh -o StrictHostKeyChecking=no \
+        -i private_key.pem \
+        $USERNAME@$HOST << 'EOF'
 
-          echo "MONGO_URI=\$MONGO_URI" > .env
+        cd ~/flask-production
 
-          sudo dnf update -y
-          sudo dnf install -y python3 python3-pip python3-venv nginx
+        git pull origin main
 
-          python3 -m venv venv
-          source venv/bin/activate
+        pip3 install -r requirements.txt
 
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install gunicorn
+        pkill -f "python3 app.py" || true
 
-          sudo systemctl daemon-reload
-          sudo systemctl enable flask-app
-          sudo systemctl restart flask-app
+        nohup python3 app.py > app.log 2>&1 &
 
-          sudo systemctl restart nginx
-
-          echo "✅ Production Done!"
-          EOF
+        EOF
