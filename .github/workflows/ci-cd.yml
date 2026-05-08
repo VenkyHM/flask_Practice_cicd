@@ -10,13 +10,10 @@ on:
     branches:
       - main
 
-  release:
-    types: [published]
 
 jobs:
 
   build-test:
-
     runs-on: ubuntu-latest
 
     env:
@@ -25,101 +22,95 @@ jobs:
 
     steps:
 
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    - name: Install Dependencies
-      run: |
-        pip install -r requirements.txt
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
 
-    - name: Verify Syntax
-      run: |
-        python -m py_compile app.py
+      - name: Verify Syntax
+        run: |
+          python -m py_compile app.py
 
-    - name: Run Tests
-      run: |
-        pytest || echo "No tests found"
+      - name: Run Tests
+        run: |
+          pytest || echo "No tests found"
 
-    - name: Build Application
-      run: |
-        mkdir -p build
-        rsync -av --exclude=build . build
+      - name: Build Application
+        run: |
+          mkdir -p build
+          rsync -av --exclude=build . build
+
 
   deploy-staging:
-
     needs: build-test
-
-    if: github.ref == 'refs/heads/staging'
-
+    if: github.ref_name == 'staging'
     runs-on: ubuntu-latest
 
     steps:
 
-    - name: Deploy To Staging
-      env:
-        HOST: ${{ secrets.STAGING_HOST }}
-        USERNAME: ${{ secrets.STAGING_USERNAME }}
-        SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+      - name: Deploy To Staging
+        env:
+          HOST: ${{ secrets.STAGING_HOST }}
+          USERNAME: ${{ secrets.STAGING_USERNAME }}
+          SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
 
-      run: |
+        run: |
+          echo "$SSH_KEY" > private_key.pem
+          chmod 600 private_key.pem
 
-        echo "$SSH_KEY" > private_key.pem
-        chmod 600 private_key.pem
+          ssh -o StrictHostKeyChecking=no \
+          -i private_key.pem \
+          $USERNAME@$HOST << 'EOF'
 
-        ssh -o StrictHostKeyChecking=no \
-        -i private_key.pem \
-        $USERNAME@$HOST << 'EOF'
+          cd ~/flask-staging
 
-        cd ~/flask-staging
+          git pull origin staging
 
-        git pull origin staging
+          pip3 install -r requirements.txt
 
-        pip3 install -r requirements.txt
+          pkill -f "python3 app.py" || true
 
-        pkill -f "python3 app.py" || true
+          nohup python3 app.py > app.log 2>&1 &
 
-        nohup python3 app.py > app.log 2>&1 &
+          EOF
 
-        EOF
 
   deploy-production:
-
     needs: build-test
-
-    if: github.event_name == 'release'
-
+    if: github.ref_name == 'main'
     runs-on: ubuntu-latest
 
     steps:
 
-    - name: Deploy To Production
-      env:
-        HOST: ${{ secrets.PROD_HOST }}
-        USERNAME: ${{ secrets.PROD_USERNAME }}
-        SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
+      - name: Deploy To Production
+        env:
+          HOST: ${{ secrets.PROD_HOST }}
+          USERNAME: ${{ secrets.PROD_USERNAME }}
+          SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
 
-      run: |
+        run: |
+          echo "$SSH_KEY" > private_key.pem
+          chmod 600 private_key.pem
 
-        echo "$SSH_KEY" > private_key.pem
-        chmod 600 private_key.pem
+          ssh -o StrictHostKeyChecking=no \
+          -i private_key.pem \
+          $USERNAME@$HOST << 'EOF'
 
-        ssh -o StrictHostKeyChecking=no \
-        -i private_key.pem \
-        $USERNAME@$HOST << 'EOF'
+          cd ~/flask-production
 
-        cd ~/flask-production
+          git pull origin main
 
-        git pull origin main
+          pip3 install -r requirements.txt
 
-        pip3 install -r requirements.txt
+          pkill -f "python3 app.py" || true
 
-        pkill -f "python3 app.py" || true
+          nohup python3 app.py > app.log 2>&1 &
 
-        nohup python3 app.py > app.log 2>&1 &
-
-        EOF
+          EOF
