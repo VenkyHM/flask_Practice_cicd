@@ -80,6 +80,26 @@ sudo systemctl enable jenkins
 
 # TASK 2: GitHub Actions CI/CD
 
+## Step- Added github secrets
+---
+<img width="1917" height="957" alt="image" src="https://github.com/user-attachments/assets/5f0e6409-878b-48f9-8a6c-c40fc5f31349" />
+
+---
+## Step-8 Code pushing from the staging branch
+```bash
+git add .
+git commit -m "Added GitHub Actions CI/CD pipeline flask app"
+git push origin staging
+```
+----
+<img width="1917" height="946" alt="image" src="https://github.com/user-attachments/assets/07547d83-0676-4f11-93c2-11983df201f0" />
+
+---
+<img width="1915" height="951" alt="image" src="https://github.com/user-attachments/assets/e97d5670-3c15-4c57-a82b-8e39bbd8bae5" />
+
+
+
+
 
 
 
