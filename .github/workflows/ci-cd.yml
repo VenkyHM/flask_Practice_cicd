@@ -62,7 +62,7 @@ jobs:
           SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
 
         run: |
-          echo "$SSH_KEY" > private_key.pem
+          echo "${SSH_KEY}" > private_key.pem
           chmod 600 private_key.pem
 
           ssh -o StrictHostKeyChecking=no \
@@ -96,7 +96,7 @@ jobs:
           SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
 
         run: |
-          echo "$SSH_KEY" > private_key.pem
+          echo "${SSH_KEY}" > private_key.pem
           chmod 600 private_key.pem
 
           ssh -o StrictHostKeyChecking=no \
