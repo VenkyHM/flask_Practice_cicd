@@ -47,8 +47,8 @@ jobs:
 
     - name: Build Application
       run: |
-        mkdir build
-        cp -r * build/
+        mkdir -p build
+        rsync -av --exclude=build . build
 
   deploy-staging:
 
